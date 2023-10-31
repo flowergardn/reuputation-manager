@@ -11,12 +11,7 @@ require('dotenv').config();
 export const prisma = new PrismaClient();
 
 export const client = new Client({
-	intents: [
-		IntentsBitField.Flags.GuildMembers,
-		IntentsBitField.Flags.GuildMessages,
-		IntentsBitField.Flags.MessageContent,
-		IntentsBitField.Flags.Guilds
-	],
+	intents: [IntentsBitField.Flags.GuildMembers, IntentsBitField.Flags.Guilds],
 	silent: false
 });
 

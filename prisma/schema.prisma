@@ -12,8 +12,8 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model Server {
-    // Guild ID
-    id         String       @id
-    joinedAt   DateTime     @default(now())
+model Member {
+  // User ID
+  id String @id
+  points Int @default(0)
 }
