@@ -3,12 +3,16 @@ import {
 	CommandInteraction,
 	EmbedBuilder,
 	GuildMember,
-	bold
+	GuildTextBasedChannel,
+	bold,
+	userMention
 } from 'discord.js';
 import { Discord, Slash, SlashChoice, SlashOption } from 'discordx';
-import { prisma } from '..';
+import { client, prisma } from '..';
 import Colors from '../constants/Colors';
 import { convertDate, convertSeconds } from '../lib/Time';
+import { Punishments } from '@prisma/client';
+import { env } from '../env/server';
 
 interface PunishmentInfo {
 	reason: string;
@@ -150,6 +154,37 @@ class Punish {
 		}
 	}
 
+	async sendLog(punishment: Punishments) {
+		const embed = new EmbedBuilder()
+			.setColor(Colors.red)
+			.setTitle('Member Punished')
+			.setFields([
+				{
+					name: 'Punishment ID',
+					value: punishment.id
+				},
+				{
+					name: 'Reason',
+					value: punishment.reason
+				},
+				{
+					name: 'User',
+					value: `${userMention(punishment.member)}`,
+					inline: true
+				},
+				{
+					name: 'Moderator',
+					value: `${userMention(punishment.moderator)}`,
+					inline: true
+				}
+			]);
+
+		const channel = (await client.channels.fetch(env.LOGS_CHANNEL)) as GuildTextBasedChannel;
+		await channel.send({
+			embeds: [embed]
+		});
+	}
+
 	@Slash({ description: 'Punish a member', defaultMemberPermissions: 'ModerateMembers' })
 	async punish(
 		@SlashOption({
@@ -197,14 +232,28 @@ class Punish {
 			}
 		});
 
+		const punishment = await prisma.punishments.create({
+			data: {
+				member: user.id,
+				moderator: interaction.user.id,
+				reason: punishmentInfo.reason
+			}
+		});
+
 		const embed = new EmbedBuilder()
 			.setColor(Colors.purple)
 			.setTitle('Punishment issued')
 			.setDescription(`You received a punishment in ${bold(interaction.guild.name)}.`)
-			.setFields({
-				name: 'Reason',
-				value: punishmentInfo.reason
-			})
+			.setFields([
+				{
+					name: 'Reason',
+					value: punishmentInfo.reason
+				},
+				{
+					name: 'Punishment ID',
+					value: punishment.id
+				}
+			])
 			.setFooter({
 				text: `You currently have ${punishmentInfo.points + member.points} points.`
 			});
@@ -225,13 +274,7 @@ class Punish {
 			});
 		}
 
-		await prisma.punishments.create({
-			data: {
-				member: user.id,
-				moderator: interaction.user.id,
-				reason: punishmentInfo.reason
-			}
-		});
+		this.sendLog(punishment);
 
 		this.executePunishment(user);
 	}
