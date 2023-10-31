@@ -8,6 +8,7 @@ function parseColor(color: string) {
 
 export default {
 	pink: parseColor('#ffd4e3'),
+	purple: parseColor('#9630f5'),
 	red: parseColor('#ff697b'),
 	green: parseColor('#9beba7'),
 	blue: parseColor('#4054db'),

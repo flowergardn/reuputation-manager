@@ -2,13 +2,19 @@ import {
 	ApplicationCommandOptionType,
 	CommandInteraction,
 	EmbedBuilder,
-	GuildMember
+	GuildMember,
+	bold
 } from 'discord.js';
 import { Discord, Slash, SlashChoice, SlashOption } from 'discordx';
 import { prisma } from '..';
 import Colors from '../constants/Colors';
 
-const punishments = {
+interface PunishmentInfo {
+	reason: string;
+	points: number;
+}
+
+const punishments: Record<string, PunishmentInfo> = {
 	nonEngPhrases: {
 		reason: 'Multiple non-English phrases',
 		points: 1
@@ -102,5 +108,61 @@ class Punish {
 		})
 		reason: string,
 		interaction: CommandInteraction
-	) {}
+	) {
+		const punishmentInfo = punishments[reason];
+
+		await interaction.deferReply();
+
+		const where = {
+			id: user.id
+		};
+
+		let member = await prisma.member.findUnique({
+			where
+		});
+		if (!member) {
+			member = await prisma.member.create({
+				data: {
+					id: user.id
+				}
+			});
+		}
+
+		await prisma.member.update({
+			where,
+			data: {
+				points: {
+					increment: punishmentInfo.points
+				}
+			}
+		});
+
+		const embed = new EmbedBuilder()
+			.setColor(Colors.purple)
+			.setTitle('Punishment issued')
+			.setDescription(`You received a punishment in ${bold(interaction.guild.name)}.`)
+			.setFields({
+				name: 'Reason',
+				value: punishmentInfo.reason
+			})
+			.setFooter({
+				text: `You currently have ${punishmentInfo.points + member.points} points.`
+			});
+
+		let moderatorMsg = `Punished ${user.id} for ${punishmentInfo.reason} (${punishmentInfo.points} points)`;
+
+		try {
+			await user.send({
+				embeds: [embed]
+			});
+			interaction.editReply({
+				content: moderatorMsg
+			});
+		} catch (err) {
+			moderatorMsg += ' [User had DMs disabled]';
+			interaction.editReply({
+				content: moderatorMsg
+			});
+		}
+	}
 }
