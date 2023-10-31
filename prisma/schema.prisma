@@ -20,3 +20,11 @@ model Member {
   // note: ideally we would check this every hour
   punishedUntil BigInt?
 }
+
+model Punishments {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  moderator String
+  member String
+  reason String
+}

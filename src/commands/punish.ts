@@ -225,6 +225,14 @@ class Punish {
 			});
 		}
 
+		await prisma.punishments.create({
+			data: {
+				member: user.id,
+				moderator: interaction.user.id,
+				reason: punishmentInfo.reason
+			}
+		});
+
 		this.executePunishment(user);
 	}
 }
