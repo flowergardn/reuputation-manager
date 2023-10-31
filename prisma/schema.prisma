@@ -16,4 +16,7 @@ model Member {
   // User ID
   id String @id
   points Int @default(0)
+  // Epoch time of when they get unbanned
+  // note: ideally we would check this every hour
+  punishedUntil BigInt?
 }
