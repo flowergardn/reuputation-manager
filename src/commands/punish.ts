@@ -36,6 +36,10 @@ const punishments: Record<string, PunishmentInfo> = {
 		reason: 'Using the wrong channel',
 		points: 2
 	},
+	instigating: {
+		reason: 'Instigating Arguments',
+		points: 20
+	},
 	selfPromotion: {
 		reason: 'Self-promotion in the incorrect channel',
 		points: 2
