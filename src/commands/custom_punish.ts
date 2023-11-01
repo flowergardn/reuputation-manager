@@ -60,7 +60,7 @@ class Punish {
 			type: ApplicationCommandOptionType.User
 		})
 		user: GuildMember,
-		@SlashOption({
+		@SlashOption({  
 			description: 'The punishment reason',
 			name: 'reason',
 			required: true,
