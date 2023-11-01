@@ -47,7 +47,11 @@ class Punish {
 		});
 	}
 
-	@Slash({ description: 'Punish a member', defaultMemberPermissions: 'ModerateMembers' })
+	@Slash({
+		description: 'Punish a member',
+		defaultMemberPermissions: 'ModerateMembers',
+		name: 'custom-punish'
+	})
 	async punish(
 		@SlashOption({
 			description: 'The member',
