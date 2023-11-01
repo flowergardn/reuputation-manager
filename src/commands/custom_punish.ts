@@ -7,95 +7,12 @@ import {
 	bold,
 	userMention
 } from 'discord.js';
-import { Discord, Slash, SlashChoice, SlashOption } from 'discordx';
+import { Discord, Slash, SlashOption } from 'discordx';
 import { client, prisma } from '..';
 import Colors from '../constants/Colors';
 import { Punishments } from '@prisma/client';
 import { env } from '../env/server';
 import { executePunishment } from '../lib/Punishments';
-
-interface PunishmentInfo {
-	reason: string;
-	points: number;
-}
-
-const punishments: Record<string, PunishmentInfo> = {
-	nonEngPhrases: {
-		reason: 'Multiple non-English phrases',
-		points: 1
-	},
-	miniModPinging: {
-		reason: 'Mini-modding when pinging a mod is a better option',
-		points: 1
-	},
-	excessiveCapsLock: {
-		reason: 'Excessive use of caps-lock across multiple longer messages',
-		points: 1
-	},
-	wrongChannel: {
-		reason: 'Using the wrong channel',
-		points: 2
-	},
-	instigating: {
-		reason: 'Instigating Arguments',
-		points: 20
-	},
-	selfPromotion: {
-		reason: 'Self-promotion in the incorrect channel',
-		points: 2
-	},
-	nsfwUsername: {
-		reason: 'NSFW username',
-		points: 5
-	},
-	earRapeVC: {
-		reason: 'Ear-rape in VC',
-		points: 5
-	},
-	textSpam: {
-		reason: 'Text spam',
-		points: 5
-	},
-	nsfwProfile: {
-		reason: 'NSFW profile picture/nickname/banner/message',
-		points: 10
-	},
-	plagiarism: {
-		reason: 'Plagiarism',
-		points: 10
-	},
-	hateComments: {
-		reason: 'Racist/Sexist/LGBTQ-phobic comments',
-		points: 10
-	},
-	derogatoryTerms: {
-		reason: 'Derogatory terms',
-		points: 10
-	},
-	nsfwContent: {
-		reason: 'NSFW image/video',
-		points: 30
-	},
-	harmfulLink: {
-		reason: 'Harmful link',
-		points: 30
-	},
-	doxxing: {
-		reason: 'Doxxing',
-		points: 30
-	},
-	massPinging: {
-		reason: 'Mass-pinging',
-		points: 30
-	}
-};
-
-const slashOpts = Object.keys(punishments).map((punishment) => {
-	return {
-		name: punishments[punishment].reason,
-		value: punishment
-	};
-});
 
 @Discord()
 class Punish {
@@ -139,7 +56,6 @@ class Punish {
 			type: ApplicationCommandOptionType.User
 		})
 		user: GuildMember,
-		@SlashChoice(...slashOpts)
 		@SlashOption({
 			description: 'The punishment reason',
 			name: 'reason',
@@ -147,10 +63,15 @@ class Punish {
 			type: ApplicationCommandOptionType.String
 		})
 		reason: string,
+		@SlashOption({
+			description: 'The violation points to give',
+			name: 'points',
+			required: true,
+			type: ApplicationCommandOptionType.Number
+		})
+		points: number,
 		interaction: CommandInteraction
 	) {
-		const punishmentInfo = punishments[reason];
-
 		await interaction.deferReply();
 
 		const where = {
@@ -172,7 +93,7 @@ class Punish {
 			where,
 			data: {
 				points: {
-					increment: punishmentInfo.points
+					increment: points
 				}
 			}
 		});
@@ -181,7 +102,7 @@ class Punish {
 			data: {
 				member: user.id,
 				moderator: interaction.user.id,
-				reason: punishmentInfo.reason
+				reason: reason
 			}
 		});
 
@@ -192,7 +113,7 @@ class Punish {
 			.setFields([
 				{
 					name: 'Reason',
-					value: punishmentInfo.reason
+					value: reason
 				},
 				{
 					name: 'Punishment ID',
@@ -200,10 +121,10 @@ class Punish {
 				}
 			])
 			.setFooter({
-				text: `You currently have ${punishmentInfo.points + member.points} points.`
+				text: `You currently have ${points + member.points} points.`
 			});
 
-		let moderatorMsg = `Punished ${user.id} for ${punishmentInfo.reason} (${punishmentInfo.points} points)`;
+		let moderatorMsg = `Punished ${user.id} for ${reason} (${points} points)`;
 
 		try {
 			await user.send({
